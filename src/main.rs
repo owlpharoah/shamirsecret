@@ -1,11 +1,20 @@
 use num_bigint::{BigInt, BigUint};
 use rand::{Rng, RngExt};
-// To implement Shamir Secret Sharing, well divide the program into part:
-// - defining constants & secret
-// - splitting secret & generating shards
-// - recombining shards to reveal secret
 
-fn main() {}
+//3 parts to this:
+// generate key
+// encrypt the file
+// SSS the key
+
+mod utils;
+use utils::file_operations::{decrypt, encrypt};
+use utils::key_generation::key_gen;
+fn main() {
+    let k = key_gen();
+    let k2 = key_gen();
+    let _ = encrypt(String::from("test.txt"), &k);
+    let _ = decrypt(String::from("secrets.enc"), &k);
+}
 fn sss(p: BigUint, secret: BigUint, n: u128, t: u128) {
     // Define constants
     // let p = BigUint::from(19u32);
