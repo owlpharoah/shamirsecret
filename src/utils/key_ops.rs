@@ -28,7 +28,7 @@ pub fn key_split(
     let req_shares = req_shares.unwrap_or(51);
     let p = p.unwrap_or(
         BigUint::parse_bytes(
-            b"231584178474632390847141970017375815706539969331281128078915168015826259279871",
+            b"179138560531673460280787640380978626307809952337545403054023054564215674822661",
             10,
         )
         .unwrap(),
@@ -58,7 +58,7 @@ pub fn key_split(
 pub fn join_shards(shards: Vec<(u128, BigUint)>, p: Option<BigUint>) -> BigInt {
     let p = p.unwrap_or(
         BigUint::parse_bytes(
-            b"231584178474632390847141970017375815706539969331281128078915168015826259279871",
+            b"179138560531673460280787640380978626307809952337545403054023054564215674822661",
             10,
         )
         .unwrap(),

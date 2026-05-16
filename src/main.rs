@@ -53,7 +53,7 @@ fn encrypt_file(
         "{}",
         p.unwrap_or(
             BigUint::parse_bytes(
-                b"231584178474632390847141970017375815706539969331281128078915168015826259279871",
+                b"179138560531673460280787640380978626307809952337545403054023054564215674822661",
                 10
             )
             .unwrap()
@@ -65,7 +65,9 @@ fn encrypt_file(
 
 fn decrypt_file(path: String, shards_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
     //first we get the key
-    let shards = collect_shards(String::from(shards_dir))?;
+    let mut shards = collect_shards(String::from(shards_dir))?;
+    shards.sort_by_key(|(x, _)| *x);
+    shards.truncate(51);
     let p = fs::read_to_string(format!("{}/prime", shards_dir))?;
     let prime = BigUint::from_str(p.trim());
 
@@ -77,7 +79,7 @@ fn decrypt_file(path: String, shards_dir: &str) -> Result<(), Box<dyn std::error
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    //encrypt_file(String::from("test.txt"), None, None, None);
+    //encrypt_file(String::from("test.txt"), None, None, None)?;
     let _ = decrypt_file(String::from("secrets.enc"), "test/shards")?;
     Ok(())
 }
