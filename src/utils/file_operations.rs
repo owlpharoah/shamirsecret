@@ -1,12 +1,13 @@
 // Here we encrypt the file in a given location with a given key
 
 use cocoon::{self, Cocoon};
+use num_bigint::BigUint;
 use std::{
-    fmt::format,
     fs::{self, File},
+    io::read_to_string,
 };
 
-pub fn encrypt(path: String, key: &[u8; 32]) -> Result<(), Box<dyn std::error::Error>> {
+pub fn encrypt(path: &String, key: &[u8; 32]) -> Result<(), Box<dyn std::error::Error>> {
     let file_contents = fs::read_to_string(path).expect("Couldnt find such a file");
     let mut cocoon = Cocoon::new(&key[..]);
     let mut new_file = File::create("secrets.enc")?;
@@ -16,9 +17,9 @@ pub fn encrypt(path: String, key: &[u8; 32]) -> Result<(), Box<dyn std::error::E
     Ok(())
 }
 
-pub fn decrypt(path: String, key: &[u8; 32]) -> Result<(), Box<dyn std::error::Error>> {
+pub fn decrypt(path: &String, key: &[u8; 32]) -> Result<(), Box<dyn std::error::Error>> {
     let mut file = File::open(&path)?;
-    let mut cocoon = Cocoon::new(&key[..]);
+    let cocoon = Cocoon::new(&key[..]);
     let new_file_path = "open";
     let decrypted = match cocoon.parse(&mut file) {
         Ok(data) => data,
@@ -33,4 +34,23 @@ pub fn decrypt(path: String, key: &[u8; 32]) -> Result<(), Box<dyn std::error::E
 
     fs::write(new_file_path, decrypted)?;
     Ok(())
+}
+
+pub fn collect_shards(path: String) -> Result<Vec<(u128, BigUint)>, Box<dyn std::error::Error>> {
+    let mut shards: Vec<(u128, BigUint)> = Vec::new();
+    for entry in fs::read_dir(path)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        let contents = fs::read_to_string(&path)?;
+        let (x, y) = contents
+            .trim()
+            .split_once('-')
+            .ok_or("Invalid Shard Format")?;
+        let a: u128 = x.parse()?;
+        let b: BigUint = y.parse()?;
+
+        shards.push((a, b));
+    }
+    Ok(shards)
 }
