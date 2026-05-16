@@ -20,7 +20,7 @@ pub fn encrypt(path: &String, key: &[u8; 32]) -> Result<(), Box<dyn std::error::
 pub fn decrypt(path: &String, key: &[u8; 32]) -> Result<(), Box<dyn std::error::Error>> {
     let mut file = File::open(&path)?;
     let cocoon = Cocoon::new(&key[..]);
-    let new_file_path = "open";
+    let new_file_path = format!("{}-opened", path);
     let decrypted = match cocoon.parse(&mut file) {
         Ok(data) => data,
         Err(cocoon::Error::Cryptography) => {
@@ -41,6 +41,10 @@ pub fn collect_shards(path: String) -> Result<Vec<(u128, BigUint)>, Box<dyn std:
     for entry in fs::read_dir(path)? {
         let entry = entry?;
         let path = entry.path();
+
+        if path.file_name().and_then(|s| s.to_str()) == Some("prime") {
+            continue;
+        }
 
         let contents = fs::read_to_string(&path)?;
         let (x, y) = contents
