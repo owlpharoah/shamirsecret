@@ -23,7 +23,7 @@ pub fn encrypt(path: &String, key: &[u8; 32]) -> Result<(), Box<dyn std::error::
     output.extend_from_slice(nonce);
     output.extend_from_slice(&ciphertext);
 
-    fs::write(format!("{}.enc", path), output);
+    fs::write(format!("{}.enc", path), output)?;
 
     Ok(())
 }
