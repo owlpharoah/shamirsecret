@@ -77,7 +77,7 @@ fn decrypt_file(path: String, shards_dir: &str) -> Result<(), Box<dyn std::error
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    //encrypt_file(String::from("test.txt"), None, None, None);
-    let _ = decrypt_file(String::from("secrets.enc"), "test/shards")?;
+    //let _ = encrypt_file(String::from("secret.txt"), Some(10), Some(5), None);
+    let _ = decrypt_file(String::from("secret.txt.enc"), "secret/shards")?;
     Ok(())
 }

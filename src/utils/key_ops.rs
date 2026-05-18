@@ -41,7 +41,7 @@ pub fn key_split(
         .collect();
 
     let mut shards: Vec<(u128, BigUint)> = Vec::new();
-    for i in 1..shares {
+    for i in 1..=shares {
         let mut poly = BigUint::from(0 as u8);
         let shard = BigUint::from(i);
         for (j, k) in coeff.iter().enumerate() {

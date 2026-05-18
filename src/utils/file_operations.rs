@@ -1,38 +1,52 @@
 // Here we encrypt the file in a given location with a given key
 
-use cocoon::{self, Cocoon};
+use aes_gcm::{Aes256Gcm, KeyInit, Nonce, aead::Aead};
 use num_bigint::BigUint;
+use rand::RngExt;
 use std::{
     fs::{self, File},
     io::read_to_string,
 };
 
 pub fn encrypt(path: &String, key: &[u8; 32]) -> Result<(), Box<dyn std::error::Error>> {
-    let file_contents = fs::read_to_string(path).expect("Couldnt find such a file");
-    let mut cocoon = Cocoon::new(&key[..]);
-    let mut new_file = File::create("secrets.enc")?;
-    cocoon
-        .dump(file_contents.into_bytes().to_vec(), &mut new_file)
-        .map_err(|e| format!("Encryption error:{:?}", e))?;
+    let file_contents = fs::read(path).expect("Couldnt find such a file");
+
+    let mut nonce_bytes: Vec<u8> = (0..12).map(|_| rand::rng().random::<u8>()).collect();
+    let nonce = Nonce::from_slice(&nonce_bytes);
+
+    let cipher = Aes256Gcm::new_from_slice(key).map_err(|e| format!("Invalid key: {:?}", e))?;
+    let ciphertext = cipher
+        .encrypt(nonce, file_contents.as_ref())
+        .map_err(|e| format!("Encryption error: {:?}", e))?;
+
+    let mut output = Vec::with_capacity(12 + ciphertext.len());
+    output.extend_from_slice(nonce);
+    output.extend_from_slice(&ciphertext);
+
+    fs::write(format!("{}.enc", path), output);
+
     Ok(())
 }
 
 pub fn decrypt(path: &String, key: &[u8; 32]) -> Result<(), Box<dyn std::error::Error>> {
-    let mut file = File::open(&path)?;
-    let cocoon = Cocoon::new(&key[..]);
-    let new_file_path = format!("{}-opened", path);
-    let decrypted = match cocoon.parse(&mut file) {
-        Ok(data) => data,
-        Err(cocoon::Error::Cryptography) => {
-            fs::write(new_file_path, "!!! Wrong Key !!!")?;
-            return Err("Wrong Key".into());
-        }
-        Err(e) => {
-            return Err(format!("Other decryption error: {:?}", e).into());
-        }
-    };
+    let data = fs::read(&path)?;
 
-    fs::write(new_file_path, decrypted)?;
+    if data.len() < 12 {
+        return Err("File too short to contain a valid nonce".into());
+    }
+
+    let (nonce_bytes, ciphertext) = data.split_at(12);
+    let nonce = Nonce::from_slice(nonce_bytes);
+
+    let cipher = Aes256Gcm::new_from_slice(key).map_err(|e| format!("Invalid key: {:?}", e))?;
+
+    let plaintext = cipher
+        .decrypt(nonce, ciphertext)
+        .map_err(|_| "Decryption failed -- wrong key or corrupted file")?;
+
+    let new_file_path = format!("{}-opened", path);
+    fs::write(new_file_path, plaintext)?;
+
     Ok(())
 }
 

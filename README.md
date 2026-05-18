@@ -63,4 +63,4 @@ decrypt_file("path/to/encrypted_output".to_string(), "path/to/shards_dir")?;
 
 - `num-bigint` for finite-field arithmetic
 - `rand` for randomness
-- `cocoon` for AEAD file encryption
+- `aes-gcm` for AEAD file encryption
