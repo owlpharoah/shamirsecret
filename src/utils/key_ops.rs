@@ -28,7 +28,7 @@ pub fn key_split(
     let req_shares = req_shares.unwrap_or(51);
     let p = p.unwrap_or(
         BigUint::parse_bytes(
-            b"179138560531673460280787640380978626307809952337545403054023054564215674822661",
+            b"231584178474632390847141970017375815706539969331281128078915168015826259279871",
             10,
         )
         .unwrap(),
@@ -55,32 +55,53 @@ pub fn key_split(
     return Ok(shards);
 }
 
+fn mod_reduce(value: BigInt, modulus: &BigInt) -> BigInt {
+    ((value % modulus) + modulus) % modulus
+}
+
+fn extended_gcd(a: BigInt, b: BigInt) -> (BigInt, BigInt, BigInt) {
+    if b == BigInt::from(0) {
+        (a, BigInt::from(1), BigInt::from(0))
+    } else {
+        let (g, x, y) = extended_gcd(b.clone(), a.clone() % b.clone());
+        (g, y.clone(), x - (a / b) * y)
+    }
+}
+
+fn mod_inverse(value: &BigInt, modulus: &BigInt) -> Option<BigInt> {
+    let (g, x, _) = extended_gcd(value.clone(), modulus.clone());
+    if g != BigInt::from(1) {
+        None
+    } else {
+        Some(mod_reduce(x, modulus))
+    }
+}
+
 pub fn join_shards(shards: Vec<(u128, BigUint)>, p: Option<BigUint>) -> BigInt {
     let p = p.unwrap_or(
         BigUint::parse_bytes(
-            b"179138560531673460280787640380978626307809952337545403054023054564215674822661",
+            b"231584178474632390847141970017375815706539969331281128078915168015826259279871",
             10,
         )
         .unwrap(),
     );
+    let p_big = BigInt::from_biguint(num_bigint::Sign::Plus, p);
 
     let mut l: BigInt = BigInt::from(0);
     for i in 0..shards.len() {
+        let xi = BigInt::from(shards[i].0);
+        let yi = BigInt::from(shards[i].1.clone());
         let mut li: BigInt = BigInt::from(1);
         for j in 0..shards.len() {
             if j != i {
-                let inverse = BigInt::from(BigInt::from(shards[i].0) - BigInt::from(shards[j].0))
-                    .modpow(
-                        &BigInt::from(&p - BigUint::from(2u32)),
-                        &BigInt::from_biguint(num_bigint::Sign::Plus, p.clone()),
-                    );
-                li = (li * ((-1 * BigInt::from(shards[j].0) * inverse) % BigInt::from(p.clone())))
-                    % BigInt::from(p.clone());
+                let xj = BigInt::from(shards[j].0);
+                let diff = mod_reduce(xi.clone() - xj.clone(), &p_big);
+                let inverse = mod_inverse(&diff, &p_big).expect("No modular inverse");
+                let term = mod_reduce(-xj, &p_big);
+                li = mod_reduce(li * term * inverse, &p_big);
             }
         }
-        l = (l + BigInt::from(shards[i].1.clone()) * BigInt::from(li))
-            % BigInt::from_biguint(num_bigint::Sign::Plus, p.clone());
-        l = (l + BigInt::from(p.clone())) % BigInt::from_biguint(num_bigint::Sign::Plus, p.clone());
+        l = mod_reduce(l + yi * li, &p_big);
     }
     return l;
 }
