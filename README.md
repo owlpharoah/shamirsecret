@@ -32,7 +32,7 @@ $$
 
 The implementation uses extended Euclid for modular inversion and BigInt for safe arithmetic across the field.
 
-## Usage (dev/demo)
+## Usage
 
 There is no CLI yet. The demo flow is invoked from [src/main.rs](src/main.rs).
 
@@ -52,12 +52,13 @@ encrypt_file("path/to/input.txt".to_string(), None, None, None)?;
 decrypt_file("path/to/encrypted_output".to_string(), "path/to/shards_dir")?;
 ```
 
-## Known Issues
+## Somethings to cover
 
 - This is a research/demo implementation and is not audited for production use
 - Output naming and shard directory layout are fixed in code
 - (Being Worked On) Polynomial coefficients are sampled from 128-bit randomness and reduced mod p, which is not uniform when p is large
 - Not verifiable secret sharing yet; corrupted shards are not detected
+- Test cases
 
 ## Dependencies
 
